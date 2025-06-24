@@ -47,11 +47,7 @@ async function generateNextNomor(tx: Omit<PrismaClient, ".disconnect" | ".on" | 
   return `${prefix}${String(nextId).padStart(4, '0')}`;
 }
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
