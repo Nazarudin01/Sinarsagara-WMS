@@ -1,0 +1,267 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User & Authentication
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String    // Hashed password
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  isActive      Boolean   @default(true)
+  loginLogs     LoginLog[]
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  USER
+}
+
+// Warehouse (Gudang)
+model Gudang {
+  id          String   @id @default(cuid())
+  kode        String   @unique
+  nama        String
+  kategori    String
+  alamat      String
+  jumlahBarang Int     @default(0)
+  jumlahStok   Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  stokGudang  StokGudang[]
+  transaksiKeluar TransaksiKeluar[]
+}
+
+// Product (Barang)
+model Barang {
+  id          String   @id @default(cuid())
+  sku         String   @unique
+  nama        String
+  kategori    String
+  satuan      String
+  jenis       String
+  hargaBeli   Float
+  gambar      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  stok        Stok[]
+  stokGudang  StokGudang[]
+  transaksiMasukDetails TransaksiMasukDetail[]
+  transaksiKeluarDetails TransaksiKeluarDetail[]
+  stokOpnameDetails StokOpnameDetail[]
+}
+
+// Pemasok (sebelumnya Supplier)
+model Pemasok {
+  id          String   @id @default(cuid())
+  nama        String
+  alamat      String
+  telepon     String
+  email       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Pelanggan (sebelumnya Customer)
+model Pelanggan {
+  id          String   @id @default(cuid())
+  nama        String
+  alamat      String
+  telepon     String
+  email       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  transaksiKeluar TransaksiKeluar[]
+}
+
+// Stock Entry (Stok Masuk)
+model StokMasuk {
+  id        String   @id @default(cuid())
+  nomor     String   @unique
+  tanggal   DateTime
+  pemasok   String   // diubah dari supplier
+  gudang    String
+  status    String   @default("pending")
+  total     Float
+  items     StokMasukItem[]
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model StokMasukItem {
+  id           String    @id @default(cuid())
+  sku          String
+  nama_barang  String
+  qty          Int
+  harga        Float
+  kodeRakId    String?
+  stokMasuk    StokMasuk @relation(fields: [stokMasukId], references: [id], onDelete: Cascade)
+  stokMasukId  String
+  kodeRak      KodeRak?  @relation(fields: [kodeRakId], references: [id])
+  stokGudang   StokGudang? @relation(fields: [stokGudangId], references: [id])
+  stokGudangId String?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+}
+
+model LoginLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  email       String
+  status      String   // SUCCESS or FAILED
+  ipAddress   String?
+  userAgent   String?
+  errorMessage String?
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id])
+}
+
+model TransaksiMasuk {
+  id        String   @id @default(cuid())
+  nomor     String   @unique
+  tanggal   DateTime
+  pemasok   String   // diubah dari supplier
+  gudang    String
+  total     Float
+  details   TransaksiMasukDetail[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TransaksiMasukDetail {
+  id                String   @id @default(cuid())
+  transaksiMasukId  String
+  barangId          String
+  qty               Int
+  harga             Float
+  transaksiMasuk    TransaksiMasuk @relation(fields: [transaksiMasukId], references: [id])
+  barang            Barang         @relation(fields: [barangId], references: [id])
+}
+
+model TransaksiKeluar {
+  id          String   @id @default(cuid())
+  nomor       String   @unique
+  tanggal     DateTime
+  pelangganId String
+  gudangId    String   // Foreign key for Gudang
+  total       Float
+  details     TransaksiKeluarDetail[]
+  pelanggan   Pelanggan @relation(fields: [pelangganId], references: [id])
+  gudang      Gudang    @relation(fields: [gudangId], references: [id]) // Relation to Gudang
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TransaksiKeluarDetail {
+  id                String   @id @default(cuid())
+  transaksiKeluarId String
+  barangId          String
+  qty               Int
+  harga             Float
+  transaksiKeluar   TransaksiKeluar @relation(fields: [transaksiKeluarId], references: [id])
+  barang            Barang          @relation(fields: [barangId], references: [id])
+}
+
+model StokGudang {
+  id        String   @id @default(cuid())
+  sku       String
+  nama      String
+  gudangId  String
+  barangId  String
+  stok      Int
+  kodeRakId String?  // relasi ke KodeRak
+  barang    Barang   @relation(fields: [barangId], references: [id])
+  gudang    Gudang   @relation(fields: [gudangId], references: [id])
+  kodeRak   KodeRak? @relation(fields: [kodeRakId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  stokMasukItems StokMasukItem[]
+
+  @@unique([barangId, gudangId, kodeRakId])
+}
+
+model StokOpnameDetail {
+  id            String   @id @default(cuid())
+  opnameId      String
+  barangId      String
+  stokSebelum   Int
+  stokAktual    Int
+  selisih       Int
+  satuan        String
+  opname        StokOpname @relation(fields: [opnameId], references: [id])
+  barang        Barang     @relation(fields: [barangId], references: [id])
+}
+
+model StokOpname {
+  id          String   @id @default(cuid())
+  nomor       String   @unique
+  tanggal     DateTime
+  gudang      String
+  keterangan  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  details     StokOpnameDetail[]
+}
+
+model KodeRak {
+  id          String   @id @default(cuid())
+  kode        String   @unique
+  nama        String
+  kategori    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  stokGudang  StokGudang[]
+  stokMasukItems StokMasukItem[]
+}
+
+model Satuan {
+  id          String   @id @default(cuid())
+  nama        String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Jenis {
+  id          String   @id @default(cuid())
+  nama        String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Rak {
+  id          String   @id @default(cuid())
+  kode        String   @unique
+  keterangan  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  stok        Stok[]
+}
+
+model Stok {
+  id          String   @id @default(cuid())
+  barangId    String
+  rakId       String
+  jumlah      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  barang      Barang   @relation(fields: [barangId], references: [id])
+  rak         Rak      @relation(fields: [rakId], references: [id])
+
+  @@index([barangId])
+  @@index([rakId])
+}

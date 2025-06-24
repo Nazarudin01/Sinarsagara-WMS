@@ -1,0 +1,1 @@
+UPDATE "Gudang" SET "kategori" = 'Bahan Baku' WHERE "kategori" IS NULL; 

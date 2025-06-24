@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global styles for the WMS app */
+
+body {
+  margin: 0;
+  font-family: 'Inter', Arial, sans-serif;
+  background: #f8fafc;
+  color: #222;
+}
+
+html, body, #__next {
+  min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Paksa background dropdown select dan combobox agar tidak transparan */
+[data-radix-popper-content-wrapper], 
+[data-radix-popper-content-wrapper] > div,
+[role="listbox"], 
+[role="option"], 
+[role="menu"], 
+[role="menuitem"], 
+[role="combobox"], 
+[role="dialog"] .bg-white, 
+[role="dialog"] .bg-gray-800 {
+  background: #23272f !important;
+  background-color: #23272f !important;
+  color: #fff !important;
+  z-index: 9999 !important;
+  border-radius: 0.5rem !important;
+}
+@media (prefers-color-scheme: light) {
+  [data-radix-popper-content-wrapper], 
+  [data-radix-popper-content-wrapper] > div,
+  [role="listbox"], 
+  [role="option"], 
+  [role="menu"], 
+  [role="menuitem"], 
+  [role="combobox"], 
+  [role="dialog"] .bg-white {
+    background: #fff !important;
+    color: #111 !important;
+  }
+} 
